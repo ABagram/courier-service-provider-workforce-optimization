@@ -89,7 +89,7 @@ for m = 1:12
     monthly_capacity_ocw = sum(q_o * n_im(:, m) .* x2(:, m));
     monthly_demand = sum(n_im(:, m) .* D_im(:, m));
     
-    prob.Constraints.(sprintf('SLA_Month_%d', m)) = ...
+    prob.Constraints.(sprintf('SLA_Month_%d', m)) =
         (monthly_capacity_inhouse + monthly_capacity_ocw) >= monthly_demand;
 end
 
@@ -97,14 +97,14 @@ end
 for m = 1:12
     for i = 1:3
         % Hub capacity limit
-        prob.Constraints.(sprintf('HubLimit_%d_%d', i, m)) = ...
+        prob.Constraints.(sprintf('HubLimit_%d_%d', i, m)) =
             x1 + x2(i, m) <= M_max;
         
         % MOQ
-        prob.Constraints.(sprintf('MOQ_Lower_%d_%d', i, m)) = ...
+        prob.Constraints.(sprintf('MOQ_Lower_%d_%d', i, m)) =
             x2(i, m) >= 10 * y(i, m);
             
-        prob.Constraints.(sprintf('MOQ_Upper_%d_%d', i, m)) = ...
+        prob.Constraints.(sprintf('MOQ_Upper_%d_%d', i, m)) =
             x2(i, m) <= M_max * y(i, m);
     end
 end
