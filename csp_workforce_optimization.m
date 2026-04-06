@@ -79,7 +79,7 @@ cost_ocw = cost_ocw_billing + cost_ocw_13th;
 cost_comm = C_comm * sum(sum(n_im .* D_im));
 
 % Total Z_annual
-prob.Objective = cost_inhouse + cost_ocw;
+prob.Objective = cost_inhouse + cost_ocw + cost_comm;
 
 %% Define constraints
 
