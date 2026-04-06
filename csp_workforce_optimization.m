@@ -162,3 +162,57 @@ end
 Verification = [monthly_req; monthly_cap; monthly_cap - monthly_req];
 V_table = array2table(round(Verification), 'RowNames', {'Total_Demand', 'Total_Capacity', 'Surplus'}, 'VariableNames', months);
 disp(V_table);
+
+%% Sensitivity Analysis
+
+% Set up the multipliers (80% to 150% of original cost)
+ocw_multipliers = 0.80 : 0.10 : 1.50; 
+num_scenarios = length(ocw_multipliers);
+
+res_x1 = zeros(1, num_scenarios);
+res_total_cost = zeros(1, num_scenarios);
+
+options.Display = 'none'; 
+
+fprintf('Multiplier | OCW Rate Shift | Permanent Riders (x1) | Total OPEX\n');
+fprintf('------------------------------------------------------------------\n');
+
+for s = 1:num_scenarios
+    mult = ocw_multipliers(s);
+    
+    % 1. Adjust the OCW cost for this specific loop
+    C_o_m_adjusted = C_o_m * mult;
+    
+    % 2. Recalculate just the OCW wage portion using the main code's variables
+    C_billing_rate_im = repmat(C_o_m_adjusted ./ d_m, 3, 1) + C_o_13th_day; 
+    cost_ocw_sens = sum(sum(C_billing_rate_im .* n_im .* x2));
+    
+    % 3. Overwrite the objective function in the existing model (Constraints stay the same!)
+    prob.Objective = cost_inhouse + cost_ocw_sens;
+    
+    % 4. Solve the updated model
+    [sol_sens, fval_sens] = solve(prob, 'Options', options);
+    
+    % 5. Store and Print Results
+    res_x1(s) = round(sol_sens.x1);
+    res_total_cost(s) = fval_sens + cost_comm; 
+    
+    fprintf('   %.2fx   |      %+3.0f%%      |          %d           | ₱%.2f\n', ...
+            mult, (mult-1)*100, res_x1(s), res_total_cost(s));
+end
+
+% --- Plot the Results ---
+figure;
+subplot(2,1,1);
+plot(ocw_multipliers * 100, res_x1, '-o', 'LineWidth', 2, 'MarkerSize', 6);
+title('Sensitivity of Permanent Riders (x_1) to OCW Rate');
+xlabel('OCW Billing Rate as Percentage of Base Cost (%)');
+ylabel('Number of Permanent Riders');
+grid on;
+
+subplot(2,1,2);
+plot(ocw_multipliers * 100, res_total_cost / 1e6, '-s', 'LineWidth', 2, 'Color', '#D95319');
+title('Impact of OCW Rate Changes on Total Annual OPEX');
+xlabel('OCW Billing Rate as Percentage of Base Cost (%)');
+ylabel('Total OPEX (Millions PHP)');
+grid on;
