@@ -188,14 +188,14 @@ for s = 1:num_scenarios
     cost_ocw_sens = sum(sum(C_billing_rate_im .* n_im .* x2));
     
     % 3. Overwrite the objective function in the existing model (Constraints stay the same!)
-    prob.Objective = cost_inhouse + cost_ocw_sens;
+    prob.Objective = cost_inhouse + cost_ocw_sens + cost_comm;
     
     % 4. Solve the updated model
     [sol_sens, fval_sens] = solve(prob, 'Options', options);
     
     % 5. Store and Print Results
     res_x1(s) = round(sol_sens.x1);
-    res_total_cost(s) = fval_sens + cost_comm; 
+    res_total_cost(s) = fval_sens; 
     
     fprintf('   %.2fx   |      %+3.0f%%      |          %d           | ₱%.2f\n', ...
             mult, (mult-1)*100, res_x1(s), res_total_cost(s));
