@@ -1,6 +1,6 @@
-Annual Labor Cost Optimization and Workforce Allocation Model
+%% Annual Labor Cost Optimization and Workforce Allocation Model
+%% Number of days
 
-Number of days
 % Total days in month m (d_m) from Table II
 d_m = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
@@ -8,8 +8,8 @@ d_m = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 n_im = [22 19 22 21 22 21 22 22 21 22 21 22; % i=1: Standard Days
          6  6  6  6  6  6  6  6  6  6  6  6; % i=2: Payday Sale
          3  3  3  3  3  3  3  3  3  3  3  3]; %i=3: Double-Day Sale
+%% Fixed demand parameters% Synthesized demand data
 
-Fixed demand parameters% Synthesized demand data
 D_i = [5000; 7500; 12500]; % Standard, Payday, Double-Day
 S_m = [0.80, 0.80, 0.90, 0.90, 0.95, 1.00, 1.00, 1.05, 1.20, 1.25, 1.40, 1.50];
 D_im = D_i * S_m; % Generates a 3x12 matrix of daily parcel volumes
@@ -20,14 +20,14 @@ demand_types = {'Standard', 'Payday', 'Double-Day'};
 months = {'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'};
 Dim_table = array2table(round(D_im), 'RowNames', demand_types, 'VariableNames', months);
 disp(Dim_table);
+%% Fixed operational capacities
 
-Fixed operational capacities
 % Synthesized operational capacities
 q_p = 80;   % In-house rider capacity
 q_o = 60;   % OCW rider capacity
 M_max = 150; % Maximum physical hub limit
+%% In-house monthly labor cost from Table VI
 
-In-house monthly labor cost from Table VI
 C_p_m = [22109.13, 19235.50, 21346.75, 23095.25, 22091.75, 21346.75, 21364.13 21555.25 20551.75 21364.13, 20792.88, 23579.63];
 
 jf = java.text.DecimalFormat('₱ #,###.00');
@@ -36,8 +36,8 @@ fprintf("Annual labor cost of a single in-house rider: %s\n", ALC_p) % Output su
 
 C_p_13th = 18127.92;      
 C_comm = 2.06;            
+%% OCW monthly labor cost from Table VII
 
-OCW monthly labor cost from Table VII
 C_o_m = [24585.35, 21389.88, 23737.59, 25681.92, 24566.03, 23737.59, 23756.91, 23969.44, 22853.55, 23756.91, 23121.68, 26220.54]; 
 
 jf = java.text.DecimalFormat('₱ #,###.00');
@@ -45,8 +45,8 @@ ALC_o = char(jf.format(sum(C_o_m)));
 fprintf("Annual agency billing of a single OCW rider: %s\n", ALC_o) % Output sum to verify accuracy of array
 
 C_o_13th_day = 64.40;     % distributed daily 13th-month agency billing (13th month pay equal to ₱ 20,158.24 ÷ 313 days = ₱ 64.40/day)
+%% Define decision variables
 
-Define decision variables
 % x1: In-house permanent riders (1 value for the whole year)
 x1 = optimvar('x1', 1, 'Type', 'integer', 'LowerBound', 0);
 
@@ -55,8 +55,8 @@ x2 = optimvar('x2', 3, 12, 'Type', 'integer', 'LowerBound', 0);
 
 % y: Decision to hire OCWs (3x12 matrix)
 y = optimvar('y', 3, 12, 'Type', 'integer', 'LowerBound', 0, 'UpperBound', 1);
+%% Define objective function
 
-Define objective function
 prob = optimproblem('ObjectiveSense', 'minimize');
 
 % Objective function consists of three distinct groups of terms:
@@ -80,8 +80,8 @@ cost_comm = C_comm * sum(sum(n_im .* D_im));
 % Total Z_annual
 prob.Objective = cost_inhouse + cost_ocw + cost_comm;
 
+%% Define constraints
 
-Define constraints
 % Constraint 1: SLA Fulfillment (Monthly Clearance)
 for m = 1:12
     monthly_capacity_inhouse = q_p * x1 * sum(n_im(:, m));
@@ -103,12 +103,12 @@ for m = 1:12
         prob.Constraints.(sprintf('MOQ_Upper_%d_%d', i, m)) = x2(i, m) <= M_max * y(i, m);
     end
 end
+%% Solve
 
-Solve
 options = optimoptions('intlinprog', 'Display', 'final');
 [sol, fval, exitflag, output] = solve(prob, 'Options', options);
+%% Display Results
 
-Display Results
 fprintf('\nOptimal Workforce Allocation\n');
 
 % Format the total OPEX
@@ -162,8 +162,8 @@ V_table = array2table(round(Verification), 'RowNames', {'Total_Demand', 'Total_C
 disp(V_table);
 
 writetable(V_table, 'demand_vs_capacity.csv'); 
+%% Sensitivity Analysis
 
-Sensitivity Analysis
 fprintf('Sensitivity Analysis\n');
 
 % Set up the multipliers (80% to 150% of original cost)
